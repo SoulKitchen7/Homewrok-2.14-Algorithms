@@ -2,13 +2,14 @@ package service;
 
 import exception.ElementNotFoundException;
 import exception.NullPointerException;
+import exception.WrongIndexException;
 import exception.WrongSizeOfMassiveException;
 
 import java.util.Arrays;
 
 public class StringListImpl implements StringList {
 
-    private final int length;
+    private int length;
     private final String[] stringArray;
 
 
@@ -19,91 +20,64 @@ public class StringListImpl implements StringList {
 
     @Override
     public String add(String item) {
+        wrongMassiveException();
         nullPointerException(item);
-        for (int i = 0; i < length-1; i++) {
-            stringArray[i] = item;
-        }
+        stringArray[length++]=item;
         return item;
     }
 
     @Override
     public String add(int index, String item) {
+        wrongMassiveException();
         nullPointerException(item);
-        try {
-            if (index-1 <= length) {
-                stringArray[index-1] = item;
-            } else {
-                throw new WrongSizeOfMassiveException();
-            }
-        } catch (WrongSizeOfMassiveException e) {
-            return "Индекс превышает размер массива";
+        wrongIndexException(index);
+
+        if (index == length) {
+            stringArray[length++]=item;
         }
+        System.arraycopy(stringArray, index, stringArray, index+1, length-index);
         return item;
     }
 
     @Override
     public String set(int index, String item) {
+        wrongIndexException(index);
         nullPointerException(item);
-        try {
-            if (index <= length) {
-                for (int i = 0; i < length; i++) {
-                    if (i == index-1) {
-                        stringArray[i] = item;
-                    }
-                }
-            } else {
-                throw new WrongSizeOfMassiveException();
-            }
-        } catch (WrongSizeOfMassiveException e) {
-            return "Индекс превышает размер массива";
-        }
+        stringArray[index-1] = item;
         return item;
     }
 
     @Override
     public String remove(String item) {
         nullPointerException(item);
-        for (int i = 0; i < length; i++)
-            try {
-            if (item.equals(stringArray[i])) {
-                stringArray[i] = stringArray[i + 1];
-
-            } else {
-                    throw new ElementNotFoundException();
-            }
-        } catch(ElementNotFoundException e){
-            return "Элемент не найден";
+        int index = indexOf(item);
+        if (index == -1) {
+            throw new ElementNotFoundException();
         }
+        if (index != length) {
+            System.arraycopy(stringArray, index+1, stringArray, index, length-index);
+        }
+        length--;
         return item;
     }
     @Override
     public String remove(int index) {
-        for (int i = 0; i < length; i++)
-            try {
-                if (index-1==i) {
-                    stringArray[i] = stringArray[i + 1];
-                } else {
-                    throw new ElementNotFoundException();
-                }
-            } catch(ElementNotFoundException e){
-                return "Элемент не найден";
-            }
-        return stringArray[index];
+        wrongIndexException(index);
+        String item = stringArray[index];
+        if (index != length) {
+            System.arraycopy(stringArray, index+1, stringArray, index, length-index);
+        }
+        length--;
+        return item;
     }
 
     @Override
     public boolean contains(String item) {
-        nullPointerException(item);
-        for (int i = 0; i < length; i++)
-            if (stringArray[i].equals(item)){
-                return true;
-        }
-         return false;
+        return indexOf(item) != -1;
     }
 
     @Override
     public int indexOf(String item) {
-        nullPointerException(item);
         for (int i = 0; i < length; i++)
             if (stringArray[i].equals(item)){
                 return i+1;
@@ -113,7 +87,7 @@ public class StringListImpl implements StringList {
 
     @Override
     public int lastIndexOf(String item) {
-        nullPointerException(item);
+
         for (int i = length-1; i >= 0; i--)
             if (stringArray[i].equals(item)){
             return i+1;
@@ -123,57 +97,53 @@ public class StringListImpl implements StringList {
 
     @Override
     public String get(int index) {
-        try {
-            if (index-1 <= length) {
-                return stringArray[index - 1];
-            } else {
-                throw new WrongSizeOfMassiveException();
-            }
-        } catch (WrongSizeOfMassiveException e) {
-            return "Индекс превышает размер массива";
-        }
+        wrongIndexException(index);
+        return stringArray[index - 1];
     }
 
     @Override
     public boolean equals(StringList otherList) {
-        return Arrays.equals(stringArray, new StringList[]{otherList});
+        return Arrays.equals(this.toArray(), otherList.toArray());
     }
 
     @Override
     public int size() {
-        return stringArray.length;
+        return length;
     }
 
     @Override
     public boolean isEmpty() {
-        if (stringArray.length == 0) {
-            return true;
-        }
-        return false;
+
+        return length==0;
     }
 
     @Override
     public void clear() {
-        for (int i = 0; i < length; i++) {
-            stringArray[i] = null;
-        }
+        length =0;
     }
 
     @Override
     public String[] toArray() {
-        String[] toArray;
-        return  toArray = Arrays.copyOf(stringArray, stringArray.length);
+        return  Arrays.copyOf(stringArray, stringArray.length);
     }
 
-    public String nullPointerException(String item) {
-        try {
+    private void nullPointerException(String item) {
+
             if (item == null) {
                 throw new NullPointerException();
             }
-        } catch (NullPointerException e) {
-            return "Параметр не может быть равно null";
+    }
+
+    private void wrongMassiveException() {
+        if (length == stringArray.length) {
+            throw new WrongSizeOfMassiveException();
         }
-        return item;
+    }
+
+    private void wrongIndexException(int index) {
+        if (index < 0 || index > length) {
+            throw new WrongIndexException();
+        }
     }
 
 }
